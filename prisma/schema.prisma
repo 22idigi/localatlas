@@ -1,0 +1,225 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PlatformType {
+  GOOGLE
+  BING
+  APPLE
+  META
+  YELP
+  YAHOO
+  NEXTDOOR
+  FOURSQUARE
+  TOMTOM
+  HERE
+  WAZE
+  TRIPADVISOR
+  YELLOWPAGES
+  BBB
+  MAPQUEST
+  OPENCORPORATES
+  LOCALEZE
+  DATA_AXLE
+  HOTFROG
+  CHAMBER_OF_COMMERCE
+  OTHER
+}
+enum SyncState {
+  CONNECTED
+  PENDING
+  SYNCING
+  FAILED
+  DISCONNECTED
+}
+enum ReviewStatus {
+  PENDING
+  DRAFTED
+  POSTED
+  NEEDS_REVIEW
+  IGNORED
+}
+enum MediaKind {
+  LOGO
+  COVER
+  STOREFRONT
+  INTERIOR
+  PRODUCT
+  TEAM
+  OTHER
+}
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+enum SubscriptionPlan {
+  STARTER
+  GROWTH
+  AGENCY
+}
+enum SubscriptionStatus {
+  CREATED
+  AUTHENTICATED
+  ACTIVE
+  HALTED
+  CANCELLED
+  COMPLETED
+  EXPIRED
+}
+
+model User {
+  id            String     @id @default(cuid())
+  name          String?
+  email         String?    @unique
+  emailVerified DateTime?
+  image         String?
+  brandVoice    String     @default("warm, helpful, and concise")
+  supportEmail  String?
+  accounts      Account[]
+  sessions      Session[]
+  locations     Location[]
+  subscriptions Subscription[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model Subscription {
+  id                      String             @id @default(cuid())
+  userId                  String
+  plan                    SubscriptionPlan
+  status                  SubscriptionStatus @default(CREATED)
+  razorpaySubscriptionId  String             @unique
+  razorpayPlanId          String
+  currentStart            DateTime?
+  currentEnd              DateTime?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+  user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, status])
+}
+
+// NextAuth-compatible account fields are cleared after linkAccount; encrypted values are retained below.
+model Account {
+  id                     String   @id @default(cuid())
+  userId                 String
+  type                   String
+  provider               String
+  providerAccountId      String
+  refresh_token          String?  @db.Text
+  access_token           String?  @db.Text
+  expires_at             Int?
+  token_type             String?
+  scope                  String?  @db.Text
+  id_token               String?  @db.Text
+  session_state          String?
+  encryptedAccessToken   String?  @db.Text
+  encryptedRefreshToken  String?  @db.Text
+  tokenExpiresAt         DateTime?
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+  @@index([userId, provider])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
+}
+
+model Location {
+  id              String        @id @default(cuid())
+  userId          String
+  name            String
+  addressLine1    String
+  addressLine2    String?
+  city            String
+  state           String
+  postalCode      String
+  country         String        @default("US")
+  phone           String
+  websiteUrl      String?
+  primaryCategory String?
+  hours           Json?
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platforms       MapPlatform[]
+  reviews         Review[]
+  media           Media[]
+  posts           Post[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  @@index([userId])
+}
+
+model MapPlatform {
+  id                 String       @id @default(cuid())
+  locationId         String
+  type               PlatformType
+  externalLocationId String?
+  listingUrl         String?
+  syncState          SyncState    @default(PENDING)
+  lastSyncedAt       DateTime?
+  lastError          String?      @db.Text
+  location           Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  reviews            Review[]
+  @@unique([locationId, type])
+}
+
+model Review {
+  id                 String       @id @default(cuid())
+  locationId         String
+  mapPlatformId      String
+  externalReviewId   String
+  authorName         String?
+  rating             Int
+  body               String?      @db.Text
+  publishedAt        DateTime
+  response           String?      @db.Text
+  responseStatus     ReviewStatus @default(PENDING)
+  respondedAt        DateTime?
+  location           Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  mapPlatform        MapPlatform  @relation(fields: [mapPlatformId], references: [id], onDelete: Cascade)
+  @@unique([mapPlatformId, externalReviewId])
+  @@index([locationId, responseStatus])
+}
+
+model Media {
+  id          String    @id @default(cuid())
+  locationId  String
+  url         String
+  publicId    String?
+  kind        MediaKind @default(OTHER)
+  altText     String?
+  syncedTo    Json?
+  createdAt   DateTime  @default(now())
+  location    Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+}
+
+model Post {
+  id          String     @id @default(cuid())
+  locationId  String
+  title       String
+  slug        String     @unique
+  excerpt     String?    @db.Text
+  content     String     @db.Text
+  keywords    String[]
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  location    Location   @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  @@index([locationId, status])
+}
