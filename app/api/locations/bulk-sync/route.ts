@@ -5,6 +5,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { pushLocationToPlatform } from "@/lib/platform-sync";
 
+export const dynamic = "force-dynamic";
+
 const locationPatch = z.object({
   locationIds: z.array(z.string().cuid()).min(1).max(100),
   name: z.string().min(1).max(120).optional(), addressLine1: z.string().min(1).max(160).optional(),

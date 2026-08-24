@@ -1,7 +1,7 @@
 {
   "name": "localatlas",
   "private": true,
-  "scripts": { "dev": "next dev", "build": "next build", "start": "next start", "lint": "next lint", "prisma:generate": "prisma generate" },
+  "scripts": { "dev": "next dev", "build": "prisma generate && next build", "start": "next start", "lint": "next lint", "prisma:generate": "prisma generate" },
   "dependencies": {
     "@auth/prisma-adapter": "2.7.4",
     "@prisma/client": "^5.22.0",

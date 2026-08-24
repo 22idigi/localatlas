@@ -4,6 +4,8 @@ import { auth } from "@/auth";
 import { plans } from "@/lib/billing";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 const planNames = Object.keys(plans) as SubscriptionPlan[];
 export async function POST(request: NextRequest) {
   const session = await auth();

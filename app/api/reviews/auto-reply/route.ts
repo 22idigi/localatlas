@@ -4,6 +4,8 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 const input = z.object({ reviewId: z.string().cuid(), postNow: z.boolean().default(false) });
 export async function POST(request: NextRequest) {
   const session = await auth();
