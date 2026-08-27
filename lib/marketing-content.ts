@@ -25,3 +25,18 @@ const entries: Omit<Article, "related">[] = [
 
 export const articles: Article[] = entries.map((entry, index) => ({ ...entry, related: [entries[(index + 1) % entries.length].slug, entries[(index + 4) % entries.length].slug, entries[(index + 9) % entries.length].slug] }));
 export const articleBySlug = (slug: string) => articles.find((article) => article.slug === slug);
+export function articleFaqs(article: Article) {
+  const topic = article.keywords[0];
+  return [
+    [`What is ${topic}?`, `${article.title} is about building a reliable process for ${topic}. The aim is to make it easier for customers to find accurate information, evaluate options and take the next relevant action.`],
+    [`Who needs ${topic}?`, `Businesses with physical locations, service areas or multiple branches benefit most, especially when local discovery, calls, directions or bookings influence revenue.`],
+    [`How quickly can ${topic} show results?`, `Foundational improvements can remove customer friction quickly, but sustained visibility is earned over time. Measure listing accuracy, qualified enquiries, reviews and local conversion actions rather than promising a fixed ranking.`],
+    [`Can 11i Maps manage ${topic} for multiple locations?`, `Yes. 11i Maps is designed for location-level data, workflows and reporting so teams can prioritise changes without losing the context of each branch or market.`],
+    [`Does ${topic} replace Google Business Profile management?`, `No. It supports a broader local presence process. Google Business Profile remains an important first-party channel, alongside your website, maps, reviews and other directory profiles.`],
+    [`What should we prepare before starting?`, `Prepare approved name, address, phone, website, hours, categories, service details, current profile access, brand guidance and recent location imagery. These remove the most common causes of delay.`],
+    [`How do you measure success?`, `Use a mix of practical measures: listing completeness, accuracy, visibility by area, calls, directions, booking starts, review trends and qualified enquiries.`],
+    [`Is AI content safe for local SEO?`, `AI can speed up research and drafting, but facts, local claims, customer policy and final publication need human review. 11i treats AI as an assistant, not an unchecked publisher.`],
+    [`Can this help with AI and answer-engine visibility?`, `Clear first-party facts, useful answers, consistent listings and credible supporting sources make a brand easier to understand in traditional and AI-assisted search. No provider can guarantee inclusion in an AI answer.`],
+    [`What is the next step?`, `Start with a location and content audit. It identifies the highest-impact fixes, commercial topics and conversion gaps before you invest in a wider programme.`],
+  ];
+}
