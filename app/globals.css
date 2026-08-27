@@ -2,4 +2,4 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base { body { @apply bg-zinc-50 text-zinc-950 antialiased dark:bg-zinc-950 dark:text-zinc-50; } }
+@layer base { html { scroll-behavior: smooth; } body { @apply bg-white text-slate-950 antialiased; } }

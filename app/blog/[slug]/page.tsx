@@ -1,8 +1,10 @@
+import Link from "next/link";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { Metadata } from "next";
+import { articleBySlug, articles } from "@/lib/marketing-content";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-
-export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = await prisma.post.findFirst({ where: { slug: params.slug, status: "PUBLISHED" }, include: { location: { select: { name: true, city: true, state: true } } } });
-  if (!post) notFound();
-  return <article className="mx-auto max-w-3xl px-6 py-16 prose dark:prose-invert"><p className="text-sm text-zinc-500">{post.location.name} · {post.location.city}, {post.location.state}</p><h1>{post.title}</h1><p className="lead">{post.excerpt}</p><div className="whitespace-pre-wrap">{post.content}</div></article>;
-}
+export function generateStaticParams() { return articles.map((article) => ({ slug: article.slug })); }
+export function generateMetadata({ params }: { params: { slug: string } }): Metadata { const article = articleBySlug(params.slug); return article ? { title: article.title, description: article.description, alternates: { canonical: `/blog/${article.slug}` }, keywords: article.keywords } : {}; }
+export default function BlogArticle({ params }: { params: { slug: string } }) { const article = articleBySlug(params.slug); if (!article) notFound(); const related = article.related.map(articleBySlug).filter(Boolean); return <><SiteHeader /><main><article className="mx-auto max-w-3xl px-5 py-14"><Link href="/blog" className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700"><ArrowLeft className="h-4 w-4" />All guides</Link><p className="mt-10 text-sm font-bold uppercase tracking-[.14em] text-blue-700">{article.stage} · {article.keywords[0]}</p><h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">{article.title}</h1><p className="mt-6 text-xl leading-8 text-slate-600">{article.description}</p>{article.sections.map((section) => <section className="mt-10" key={section.heading}><h2 className="text-2xl font-semibold">{section.heading}</h2><p className="mt-4 leading-8 text-slate-700">{section.body}</p></section>)}<section className="mt-12 rounded-2xl bg-blue-50 p-7"><h2 className="text-xl font-semibold">Build a stronger local presence</h2><p className="mt-2 text-slate-600">Need a practical plan for listings, reviews and local content? 11i Maps can help.</p><Link href="/contact" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-700">Talk to our team <ArrowRight className="h-4 w-4" /></Link></section><section className="mt-12 border-t border-slate-200 pt-8"><h2 className="text-xl font-semibold">Continue planning</h2><div className="mt-5 grid gap-3">{related.map((item) => item && <Link key={item.slug} href={`/blog/${item.slug}`} className="rounded-lg border border-slate-200 p-4 text-sm font-semibold hover:border-blue-300 hover:text-blue-700">{item.title}</Link>)}</div></section></article></main><SiteFooter /></>; }
