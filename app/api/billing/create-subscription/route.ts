@@ -19,5 +19,5 @@ export async function POST(request: NextRequest) {
   if (!response.ok) return NextResponse.json({ error: "Could not start Razorpay checkout" }, { status: 502 });
   const subscription = await response.json() as { id: string; status: "created"; short_url?: string };
   await prisma.subscription.upsert({ where: { razorpaySubscriptionId: subscription.id }, create: { userId: session.user.id, plan, razorpayPlanId: planId, razorpaySubscriptionId: subscription.id }, update: { plan, razorpayPlanId: planId } });
-  return NextResponse.json({ subscriptionId: subscription.id, keyId: process.env.RAZORPAY_KEY_ID, name: "LocalAtlas", description: selected.description, prefill: { email: session.user.email, name: session.user.name ?? "" } });
+  return NextResponse.json({ subscriptionId: subscription.id, keyId: process.env.RAZORPAY_KEY_ID, name: "11i Maps", description: selected.description, prefill: { email: session.user.email, name: session.user.name ?? "" } });
 }
