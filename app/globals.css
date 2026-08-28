@@ -3,3 +3,9 @@
 @tailwind utilities;
 
 @layer base { html { scroll-behavior: smooth; } body { @apply bg-white text-slate-950 antialiased; } }
+
+@keyframes map-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes signal-pulse { 0% { transform: scale(.82); opacity: .62; } 75%, 100% { transform: scale(1.38); opacity: 0; } }
+.map-float { animation: map-float 6s ease-in-out infinite; }
+.signal-pulse { animation: signal-pulse 2.8s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
