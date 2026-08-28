@@ -1,0 +1,2 @@
+import { MessageCircle } from "lucide-react";
+export function WhatsAppFloater() { return <a href="https://wa.me/919885111101?text=Hi%2011i%20Maps%2C%20I%20would%20like%20to%20discuss%20local%20SEO%20and%20map%20listing%20management." target="_blank" rel="noreferrer" aria-label="Chat with 11i Maps on WhatsApp" className="fixed bottom-5 right-5 z-[60] grid h-14 w-14 place-items-center rounded-full bg-[#25D366] text-white shadow-xl shadow-emerald-900/25 transition hover:scale-105 hover:bg-[#1fb85a]"><MessageCircle className="h-7 w-7" /></a>; }
