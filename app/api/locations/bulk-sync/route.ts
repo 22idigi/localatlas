@@ -36,9 +36,11 @@ export async function POST(request: NextRequest) {
   const results = await Promise.allSettled(targets.map(async (platform) => {
     await prisma.mapPlatform.update({ where: { id: platform.id }, data: { syncState: "SYNCING", lastError: null } });
     const updated = { ...locations.find((x) => x.id === platform.locationId)!, ...locationData, ...(hours !== undefined ? { hours } : {}) };
-    await pushLocationToPlatform(platform, updated);
-    return prisma.mapPlatform.update({ where: { id: platform.id }, data: { syncState: "CONNECTED", lastSyncedAt: new Date() } });
+    const result = await pushLocationToPlatform(platform, updated);
+    await prisma.mapPlatform.update({ where: { id: platform.id }, data: result.outcome === "UPDATED" ? { syncState: "CONNECTED", lastSyncedAt: new Date(), lastError: null } : { syncState: "PENDING", lastError: result.message ?? null } });
+    return result;
   }));
   await Promise.all(results.map((result, index) => result.status === "rejected" ? prisma.mapPlatform.update({ where: { id: targets[index].id }, data: { syncState: "FAILED", lastError: result.reason instanceof Error ? result.reason.message : "Sync failed" } }) : Promise.resolve()));
-  return NextResponse.json({ updated: locations.length, synced: results.filter((r) => r.status === "fulfilled").length, failed: results.filter((r) => r.status === "rejected").length });
+  const fulfilled = results.filter((result): result is PromiseFulfilledResult<Awaited<ReturnType<typeof pushLocationToPlatform>>> => result.status === "fulfilled");
+  return NextResponse.json({ updated: locations.length, synced: fulfilled.filter((result) => result.value.outcome === "UPDATED").length, queued: fulfilled.filter((result) => result.value.outcome === "QUEUED").length, failed: results.filter((result) => result.status === "rejected").length });
 }

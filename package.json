@@ -1,17 +1,33 @@
 {
-  "name": "localatlas",
+  "name": "11i-maps",
   "private": true,
-  "scripts": { "dev": "next dev", "build": "prisma generate && next build", "start": "next start", "lint": "next lint", "prisma:generate": "prisma generate" },
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "tsc --noEmit",
+    "prisma:generate": "prisma generate"
+  },
   "dependencies": {
-    "@auth/prisma-adapter": "2.7.4",
+    "@auth/prisma-adapter": "^2.11.3",
     "@prisma/client": "^5.22.0",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "lucide-react": "^0.468.0",
-    "next": "14.2.24",
-    "next-auth": "5.0.0-beta.25",
+    "next": "^16.3.6",
+    "next-auth": "^5.0.0-beta.32",
     "openai": "^4.73.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "zod": "^3.23.8"
   },
-  "devDependencies": { "autoprefixer": "^10.4.20", "prisma": "5.22.0", "tailwindcss": "^3.4.15", "typescript": "5.6.3", "@types/node": "22.9.0", "@types/react": "18.3.12", "@types/react-dom": "18.3.1" }
+  "devDependencies": {
+    "@types/node": "22.9.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "autoprefixer": "^10.4.20",
+    "prisma": "5.22.0",
+    "tailwindcss": "^3.4.15",
+    "typescript": "^7.0.2"
+  }
 }

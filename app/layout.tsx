@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { WhatsAppFloater } from "@/components/whatsapp-floater";
 
@@ -15,4 +17,4 @@ export const metadata: Metadata = {
 };
 const organization = { "@context": "https://schema.org", "@type": "Organization", name: "11i Maps", url: "https://11i.co", logo: "https://11i.co/11i-maps-logo.png", email: "hi@11i.co", contactPoint: [{ "@type": "ContactPoint", telephone: "+91-9885111101", contactType: "sales", availableLanguage: ["English"] }] };
 const website = { "@context": "https://schema.org", "@type": "WebSite", name: "11i Maps", url: "https://11i.co", description: "Multi-location local SEO, listings management and review workflows." };
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="en" suppressHydrationWarning><body>{children}<WhatsAppFloater /><Script id="organization-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organization) }} /><Script id="website-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(website) }} /></body></html>; }
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="en" suppressHydrationWarning><body>{children}<WhatsAppFloater /><Analytics /><SpeedInsights /><Script id="organization-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organization) }} /><Script id="website-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(website) }} /></body></html>; }

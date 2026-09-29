@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   const selected = plans[plan]; const planId = process.env[selected.env];
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET || !planId) return NextResponse.json({ error: "Billing is not configured yet. Contact sales." }, { status: 503 });
   const basic = Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString("base64");
-  const response = await fetch("https://api.razorpay.com/v1/subscriptions", { method: "POST", headers: { Authorization: `Basic ${basic}`, "Content-Type": "application/json" }, body: JSON.stringify({ plan_id: planId, total_count: 120, quantity: 1, customer_notify: true, notes: { localatlas_user_id: session.user.id, plan } }) });
+  const response = await fetch("https://api.razorpay.com/v1/subscriptions", { method: "POST", headers: { Authorization: `Basic ${basic}`, "Content-Type": "application/json" }, body: JSON.stringify({ plan_id: planId, total_count: 120, quantity: 1, customer_notify: true, notes: { user_id: session.user.id, plan, product: "11i Maps" } }) });
   if (!response.ok) return NextResponse.json({ error: "Could not start Razorpay checkout" }, { status: 502 });
   const subscription = await response.json() as { id: string; status: "created"; short_url?: string };
   await prisma.subscription.upsert({ where: { razorpaySubscriptionId: subscription.id }, create: { userId: session.user.id, plan, razorpayPlanId: planId, razorpaySubscriptionId: subscription.id }, update: { plan, razorpayPlanId: planId } });
