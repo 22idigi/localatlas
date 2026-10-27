@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { pushLocationToPlatform } from "@/lib/platform-sync";
+import { getTenantContext } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
 
@@ -14,13 +14,14 @@ const locationPatch = z.object({
   state: z.string().min(1).max(80).optional(), postalCode: z.string().min(1).max(20).optional(),
   country: z.string().length(2).optional(), phone: z.string().min(5).max(30).optional(),
   websiteUrl: z.string().url().nullable().optional(), primaryCategory: z.string().max(120).nullable().optional(),
-  hours: z.record(z.array(z.object({ open: z.string(), close: z.string() }))).nullable().optional(),
+  hours: z.record(z.string(), z.array(z.object({ open: z.string(), close: z.string() }))).nullable().optional(),
   platforms: z.array(z.string()).optional(),
 });
 
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const tenant = await getTenantContext();
+  if (!tenant) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!tenant.canManageLocations) return NextResponse.json({ error: "You do not have permission to change locations." }, { status: 403 });
   const parsed = locationPatch.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "Invalid update", details: parsed.error.flatten() }, { status: 422 });
   const { locationIds, platforms, hours, ...locationData } = parsed.data;
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
     ...locationData,
     ...(hours === null ? { hours: Prisma.JsonNull } : hours ? { hours: hours as Prisma.InputJsonValue } : {}),
   };
-  const locations = await prisma.location.findMany({ where: { id: { in: locationIds }, userId: session.user.id }, include: { platforms: true } });
+  const locations = await prisma.location.findMany({ where: { id: { in: locationIds }, organizationId: tenant.organization.id }, include: { platforms: true } });
   if (locations.length !== locationIds.length) return NextResponse.json({ error: "One or more locations are unavailable" }, { status: 404 });
 
   await prisma.$transaction(locations.map((location) => prisma.location.update({ where: { id: location.id }, data: updateData })));
@@ -42,5 +43,6 @@ export async function POST(request: NextRequest) {
   }));
   await Promise.all(results.map((result, index) => result.status === "rejected" ? prisma.mapPlatform.update({ where: { id: targets[index].id }, data: { syncState: "FAILED", lastError: result.reason instanceof Error ? result.reason.message : "Sync failed" } }) : Promise.resolve()));
   const fulfilled = results.filter((result): result is PromiseFulfilledResult<Awaited<ReturnType<typeof pushLocationToPlatform>>> => result.status === "fulfilled");
+  await prisma.activityLog.create({ data: { organizationId: tenant.organization.id, actorUserId: tenant.user.id, action: "location.bulk_sync_prepared", entityType: "Location", metadata: { locationIds, requestedPlatforms: platforms ?? "all", synced: fulfilled.filter((result) => result.value.outcome === "UPDATED").length, queued: fulfilled.filter((result) => result.value.outcome === "QUEUED").length } } });
   return NextResponse.json({ updated: locations.length, synced: fulfilled.filter((result) => result.value.outcome === "UPDATED").length, queued: fulfilled.filter((result) => result.value.outcome === "QUEUED").length, failed: results.filter((result) => result.status === "rejected").length });
 }

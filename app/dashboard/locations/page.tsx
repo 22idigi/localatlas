@@ -1,12 +1,12 @@
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getTenantContext } from "@/lib/tenant";
 import LocationsConsole from "./locations-console";
 
 export default async function LocationsPage() {
-  const session = await auth();
-  if (!session?.user?.id) return <main className="grid min-h-screen place-items-center text-sm text-zinc-500">Sign in to manage your locations.</main>;
+  const tenant = await getTenantContext();
+  if (!tenant) return <main className="grid min-h-screen place-items-center text-sm text-zinc-500">Sign in to manage your locations.</main>;
   const locations = await prisma.location.findMany({
-    where: { userId: session.user.id },
+    where: { organizationId: tenant.organization.id },
     include: { platforms: { select: { id: true, type: true, syncState: true, lastSyncedAt: true, lastError: true } } },
     orderBy: { updatedAt: "desc" },
   });
