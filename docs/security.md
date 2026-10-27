@@ -12,6 +12,8 @@
 - Private `/app`, `/admin`, `/dashboard` and `/api` paths excluded from robots.
 - Activity records for location creation, audit completion and task changes.
 - Secrets excluded by `.gitignore` and represented by names only in `.env.example`.
+- Baseline browser security headers and a disabled framework signature header.
+- Pull-request CI for schema validation, type checking, tests and production builds.
 
 ## Required before production customer data
 
