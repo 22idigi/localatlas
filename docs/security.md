@@ -14,6 +14,7 @@
 - Secrets excluded by `.gitignore` and represented by names only in `.env.example`.
 - Baseline browser security headers and a disabled framework signature header.
 - Pull-request CI for schema validation, type checking, tests and production builds.
+- A no-cache health endpoint that reports only database/schema readiness and never returns connection details.
 
 ## Required before production customer data
 

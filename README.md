@@ -37,6 +37,7 @@ The webpack flag avoids a local Turbopack sandbox limitation that attempts to bi
 - Optimisation tasks: `/app/tasks`
 - Integration health: `/app/integrations`
 - Internal administration: `/admin` (requires `PLATFORM_SUPER_ADMIN`)
+- Operational database/schema health: `/api/health` (no customer data)
 
 ## Important limitations
 
