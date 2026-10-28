@@ -19,9 +19,20 @@
 8. Create a Vercel preview/staged production deployment and inspect logs.
 9. Promote only the tested build.
 
-## Production migration caution
+## Migration strategy
 
-The repository previously had no Prisma migration history. `20261027000100_tenant_foundation` is an incremental migration for a database already matching the old schema. Do not run it against an empty database as the sole migration. For a new environment, create a reviewed baseline from the old schema or provision with the schema before resolving the baseline.
+`20261026000100_initial_baseline` recreates the schema that existed before tenant isolation. New empty environments can run `prisma migrate deploy`; Prisma applies the baseline first and the tenant migration second.
+
+The existing production database already contains the baseline schema. Before its first migration-managed release, take a verified backup and mark only the baseline as already applied:
+
+```bash
+npx prisma migrate resolve --applied 20261026000100_initial_baseline
+npx prisma migrate deploy
+```
+
+Do not resolve the tenant migration manually. Rehearse the exact production sequence against a restored staging copy before release.
+
+Preview builds can apply migrations only when both `VERCEL_ENV=preview` and `RUN_PREVIEW_MIGRATIONS=true`. Keep that branch-scoped flag off after the reviewed migration succeeds. Production builds never run this gated migration script.
 
 ## Required environment variables
 

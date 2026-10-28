@@ -16,7 +16,7 @@ Tenant-aware local SEO and multi-location operations platform operated by 22i So
 1. Copy `.env.example` to `.env.local` and configure a non-production PostgreSQL database and Auth.js credentials.
 2. Install dependencies with `npm ci`.
 3. Generate the client with `npx prisma generate`.
-4. Review `docs/deployment.md` before applying migrations. The current migration is incremental for a database created from the earlier schema.
+4. Review `docs/deployment.md` before applying migrations. Empty databases use the baseline plus tenant migration; an existing production database must resolve the baseline before applying the tenant migration.
 5. Start the application with `npm run dev`.
 
 ## Verification

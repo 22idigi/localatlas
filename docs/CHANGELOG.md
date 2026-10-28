@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-28
+
+- Added a reviewed baseline migration for new empty environments.
+- Added an explicit Preview-only migration gate for Vercel builds.
+- Provisioned an isolated Neon database for Preview; Production remains on its existing database.
+
 All notable changes follow a business-friendly Keep a Changelog structure.
 
 ## Unreleased — Phase 1 tenant foundation
