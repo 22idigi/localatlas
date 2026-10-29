@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 const planNames = Object.keys(plans) as SubscriptionPlan[];
 export async function POST(request: NextRequest) {
+  if (process.env.RAZORPAY_LIVE_ENABLED !== "true") return NextResponse.json({ error: "Online checkout is not enabled yet. Request guided onboarding." }, { status: 503 });
   const session = await auth();
   if (!session?.user?.id || !session.user.email) return NextResponse.json({ error: "Please sign in before choosing a plan." }, { status: 401 });
   const { plan } = await request.json() as { plan?: SubscriptionPlan };

@@ -1,0 +1,8 @@
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
+import { featurePages } from "@/lib/product-pages";
+
+export const metadata = { title: "Local SEO Platform Features", description: "Explore 11i Maps features for authorised profile operations, reviews, location management, reporting, rank tracking and AI-assisted optimisation.", alternates: { canonical: "/features" } };
+export default function FeaturesPage() { return <><SiteHeader /><main><section className="bg-slate-50 px-5 py-20 text-center"><p className="text-sm font-bold uppercase tracking-[.15em] text-blue-700">Platform features</p><h1 className="mx-auto mt-3 max-w-3xl text-5xl font-semibold tracking-tight">Local operations built around truth and approval.</h1><p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-600">Use what is available now, see what needs provider approval and keep every important change accountable.</p></section><section className="mx-auto grid max-w-7xl gap-5 px-5 py-20 md:grid-cols-2 lg:grid-cols-3">{featurePages.map((feature) => <article key={feature.slug} className="rounded-2xl border border-slate-200 p-6"><p className="text-xs font-bold uppercase tracking-wider text-blue-700">{feature.eyebrow}</p><h2 className="mt-3 text-xl font-semibold">{feature.title}</h2><p className="mt-3 text-sm leading-6 text-slate-600">{feature.description}</p><Link href={`/features/${feature.slug}`} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-700">Explore feature <ArrowRight className="h-4 w-4" /></Link></article>)}</section></main><SiteFooter /></>; }

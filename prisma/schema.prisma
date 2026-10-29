@@ -30,6 +30,7 @@ enum PlatformType {
   CHAMBER_OF_COMMERCE
   OTHER
 }
+
 enum SyncState {
   CONNECTED
   PENDING
@@ -37,6 +38,7 @@ enum SyncState {
   FAILED
   DISCONNECTED
 }
+
 enum ReviewStatus {
   PENDING
   DRAFTED
@@ -44,6 +46,7 @@ enum ReviewStatus {
   NEEDS_REVIEW
   IGNORED
 }
+
 enum MediaKind {
   LOGO
   COVER
@@ -53,16 +56,19 @@ enum MediaKind {
   TEAM
   OTHER
 }
+
 enum PostStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
 }
+
 enum SubscriptionPlan {
   STARTER
   GROWTH
   AGENCY
 }
+
 enum SubscriptionStatus {
   CREATED
   AUTHENTICATED
@@ -73,55 +79,215 @@ enum SubscriptionStatus {
   EXPIRED
 }
 
+enum OrganizationType {
+  BUSINESS
+  AGENCY
+  INTERNAL
+}
+
+enum MembershipRole {
+  PLATFORM_SUPER_ADMIN
+  AGENCY_OWNER
+  AGENCY_ADMIN
+  BUSINESS_OWNER
+  LOCATION_MANAGER
+  SEO_SPECIALIST
+  READ_ONLY_CLIENT
+}
+
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+}
+
+enum AuditStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum TaskPriority {
+  CRITICAL
+  HIGH_IMPACT
+  MEDIUM_IMPACT
+  MAINTENANCE
+}
+
+enum TaskEffort {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  DISMISSED
+}
+
+enum IntegrationProvider {
+  GOOGLE_SEARCH_CONSOLE
+  GOOGLE_BUSINESS_PROFILE
+  BING_PLACES
+  APPLE_BUSINESS_CONNECT
+  META
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  ACTION_REQUIRED
+  ERROR
+  DISCONNECTED
+  PENDING_APPROVAL
+}
+
 model User {
-  id            String     @id @default(cuid())
-  name          String?
-  email         String?    @unique
-  emailVerified DateTime?
-  image         String?
-  brandVoice    String     @default("warm, helpful, and concise")
-  supportEmail  String?
-  accounts      Account[]
-  sessions      Session[]
-  locations     Location[]
-  subscriptions Subscription[]
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id                     String                  @id @default(cuid())
+  name                   String?
+  email                  String?                 @unique
+  emailVerified          DateTime?
+  image                  String?
+  brandVoice             String                  @default("warm, helpful, and concise")
+  supportEmail           String?
+  accounts               Account[]
+  sessions               Session[]
+  locations              Location[]
+  memberships            Membership[]
+  activityLogs           ActivityLog[]
+  subscriptions          Subscription[]
+  integrationOAuthStates IntegrationOAuthState[]
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+}
+
+model Organization {
+  id                      String                  @id @default(cuid())
+  name                    String
+  slug                    String                  @unique
+  type                    OrganizationType        @default(BUSINESS)
+  businessType            String?
+  operatingRegion         String?
+  memberships             Membership[]
+  locations               Location[]
+  auditRuns               AuditRun[]
+  tasks                   OptimizationTask[]
+  activityLogs            ActivityLog[]
+  integrationConnections  IntegrationConnection[]
+  integrationOAuthStates  IntegrationOAuthState[]
+  searchConsoleProperties SearchConsoleProperty[]
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+}
+
+model IntegrationConnection {
+  id                      String                  @id @default(cuid())
+  organizationId          String
+  provider                IntegrationProvider
+  status                  IntegrationStatus       @default(CONNECTED)
+  externalAccountEmail    String?
+  encryptedAccessToken    String?                 @db.Text
+  encryptedRefreshToken   String?                 @db.Text
+  accessTokenExpiresAt    DateTime?
+  scopes                  String[]
+  metadata                Json?
+  lastSyncedAt            DateTime?
+  lastError               String?                 @db.Text
+  organization            Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  searchConsoleProperties SearchConsoleProperty[]
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+
+  @@unique([organizationId, provider])
+  @@index([organizationId, status])
+}
+
+model IntegrationOAuthState {
+  id                    String              @id @default(cuid())
+  state                 String              @unique
+  organizationId        String
+  userId                String
+  provider              IntegrationProvider
+  redirectUri           String
+  encryptedCodeVerifier String              @db.Text
+  expiresAt             DateTime
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt             DateTime            @default(now())
+
+  @@index([organizationId, provider, expiresAt])
+  @@index([userId, expiresAt])
+}
+
+model SearchConsoleProperty {
+  id              String                @id @default(cuid())
+  organizationId  String
+  connectionId    String
+  siteUrl         String
+  permissionLevel String
+  selected        Boolean               @default(false)
+  lastFetchedAt   DateTime?
+  organization    Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  connection      IntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@unique([connectionId, siteUrl])
+  @@index([organizationId, selected])
+}
+
+model Membership {
+  id             String           @id @default(cuid())
+  organizationId String
+  userId         String
+  role           MembershipRole   @default(BUSINESS_OWNER)
+  status         MembershipStatus @default(ACTIVE)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([organizationId, userId])
+  @@index([userId, status])
+  @@index([organizationId, role, status])
 }
 
 model Subscription {
-  id                      String             @id @default(cuid())
-  userId                  String
-  plan                    SubscriptionPlan
-  status                  SubscriptionStatus @default(CREATED)
-  razorpaySubscriptionId  String             @unique
-  razorpayPlanId          String
-  currentStart            DateTime?
-  currentEnd              DateTime?
-  createdAt               DateTime           @default(now())
-  updatedAt               DateTime           @updatedAt
-  user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                     String             @id @default(cuid())
+  userId                 String
+  plan                   SubscriptionPlan
+  status                 SubscriptionStatus @default(CREATED)
+  razorpaySubscriptionId String             @unique
+  razorpayPlanId         String
+  currentStart           DateTime?
+  currentEnd             DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId, status])
 }
 
 // NextAuth-compatible account fields are cleared after linkAccount; encrypted values are retained below.
 model Account {
-  id                     String   @id @default(cuid())
-  userId                 String
-  type                   String
-  provider               String
-  providerAccountId      String
-  refresh_token          String?  @db.Text
-  access_token           String?  @db.Text
-  expires_at             Int?
-  token_type             String?
-  scope                  String?  @db.Text
-  id_token               String?  @db.Text
-  session_state          String?
-  encryptedAccessToken   String?  @db.Text
-  encryptedRefreshToken  String?  @db.Text
-  tokenExpiresAt         DateTime?
-  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                    String    @id @default(cuid())
+  userId                String
+  type                  String
+  provider              String
+  providerAccountId     String
+  refresh_token         String?   @db.Text
+  access_token          String?   @db.Text
+  expires_at            Int?
+  token_type            String?
+  scope                 String?   @db.Text
+  id_token              String?   @db.Text
+  session_state         String?
+  encryptedAccessToken  String?   @db.Text
+  encryptedRefreshToken String?   @db.Text
+  tokenExpiresAt        DateTime?
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([provider, providerAccountId])
   @@index([userId, provider])
 }
@@ -133,35 +299,43 @@ model Session {
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
 model VerificationToken {
   identifier String
   token      String   @unique
   expires    DateTime
+
   @@unique([identifier, token])
 }
 
 model Location {
-  id              String        @id @default(cuid())
+  id              String             @id @default(cuid())
   userId          String
+  organizationId  String
   name            String
   addressLine1    String
   addressLine2    String?
   city            String
   state           String
   postalCode      String
-  country         String        @default("US")
+  country         String             @default("US")
   phone           String
   websiteUrl      String?
   primaryCategory String?
   hours           Json?
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   platforms       MapPlatform[]
   reviews         Review[]
   media           Media[]
   posts           Post[]
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  auditRuns       AuditRun[]
+  tasks           OptimizationTask[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
   @@index([userId])
+  @@index([organizationId, updatedAt])
 }
 
 model MapPlatform {
@@ -175,37 +349,39 @@ model MapPlatform {
   lastError          String?      @db.Text
   location           Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
   reviews            Review[]
+
   @@unique([locationId, type])
 }
 
 model Review {
-  id                 String       @id @default(cuid())
-  locationId         String
-  mapPlatformId      String
-  externalReviewId   String
-  authorName         String?
-  rating             Int
-  body               String?      @db.Text
-  publishedAt        DateTime
-  response           String?      @db.Text
-  responseStatus     ReviewStatus @default(PENDING)
-  respondedAt        DateTime?
-  location           Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  mapPlatform        MapPlatform  @relation(fields: [mapPlatformId], references: [id], onDelete: Cascade)
+  id               String       @id @default(cuid())
+  locationId       String
+  mapPlatformId    String
+  externalReviewId String
+  authorName       String?
+  rating           Int
+  body             String?      @db.Text
+  publishedAt      DateTime
+  response         String?      @db.Text
+  responseStatus   ReviewStatus @default(PENDING)
+  respondedAt      DateTime?
+  location         Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  mapPlatform      MapPlatform  @relation(fields: [mapPlatformId], references: [id], onDelete: Cascade)
+
   @@unique([mapPlatformId, externalReviewId])
   @@index([locationId, responseStatus])
 }
 
 model Media {
-  id          String    @id @default(cuid())
-  locationId  String
-  url         String
-  publicId    String?
-  kind        MediaKind @default(OTHER)
-  altText     String?
-  syncedTo    Json?
-  createdAt   DateTime  @default(now())
-  location    Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  id         String    @id @default(cuid())
+  locationId String
+  url        String
+  publicId   String?
+  kind       MediaKind @default(OTHER)
+  altText    String?
+  syncedTo   Json?
+  createdAt  DateTime  @default(now())
+  location   Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
 }
 
 model Post {
@@ -221,5 +397,81 @@ model Post {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   location    Location   @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
   @@index([locationId, status])
+}
+
+model AuditRun {
+  id                 String         @id @default(cuid())
+  organizationId     String
+  locationId         String
+  status             AuditStatus    @default(RUNNING)
+  score              Int?
+  inputCoverage      Int
+  methodologyVersion String         @default("profile-v1")
+  sourceSummary      Json
+  startedAt          DateTime       @default(now())
+  completedAt        DateTime?
+  errorMessage       String?        @db.Text
+  organization       Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location           Location       @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  findings           AuditFinding[]
+
+  @@index([organizationId, startedAt])
+  @@index([locationId, startedAt])
+}
+
+model AuditFinding {
+  id         String            @id @default(cuid())
+  auditRunId String
+  code       String
+  title      String
+  detail     String            @db.Text
+  passed     Boolean
+  weight     Int
+  source     String
+  auditRun   AuditRun          @relation(fields: [auditRunId], references: [id], onDelete: Cascade)
+  task       OptimizationTask?
+  createdAt  DateTime          @default(now())
+
+  @@unique([auditRunId, code])
+  @@index([auditRunId, passed])
+}
+
+model OptimizationTask {
+  id             String        @id @default(cuid())
+  organizationId String
+  locationId     String?
+  findingId      String?       @unique
+  title          String
+  reason         String        @db.Text
+  priority       TaskPriority
+  effort         TaskEffort
+  status         TaskStatus    @default(OPEN)
+  dueAt          DateTime?
+  completedAt    DateTime?
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location       Location?     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  finding        AuditFinding? @relation(fields: [findingId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([organizationId, status, priority])
+  @@index([locationId, status])
+}
+
+model ActivityLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  actorUserId    String?
+  action         String
+  entityType     String
+  entityId       String?
+  metadata       Json?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actor          User?        @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([actorUserId, createdAt])
 }

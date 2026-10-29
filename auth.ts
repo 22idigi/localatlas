@@ -5,13 +5,30 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { encryptToken } from "@/lib/token-crypto";
 
-export const { handlers, auth } = NextAuth({
+export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "database" },
   providers: [
-    Google({ authorization: { params: { scope: "openid email profile https://www.googleapis.com/auth/business.manage" } } }),
-    AzureAD({ authorization: { params: { scope: "openid profile email offline_access https://bingads.microsoft.com/msads.manage" } } }),
+    // Authentication is intentionally separate from listing-management consent.
+    // Google Business Profile and Bing partner scopes belong to dedicated connectors.
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID!,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+      authorization: { params: { scope: "openid email profile" } },
+    }),
+    AzureAD({
+      clientId: process.env.AUTH_AZURE_AD_ID!,
+      clientSecret: process.env.AUTH_AZURE_AD_SECRET!,
+      issuer: `https://login.microsoftonline.com/${process.env.AUTH_AZURE_AD_TENANT_ID ?? "common"}/v2.0`,
+      authorization: { params: { scope: "openid profile email offline_access" } },
+    }),
   ],
+  callbacks: {
+    session({ session, user }) {
+      session.user.id = user.id;
+      return session;
+    },
+  },
   events: {
     async linkAccount({ account }) {
       // Remove adapter-written plaintext credential columns immediately after encrypting them.

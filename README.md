@@ -1,17 +1,50 @@
-# LocalAtlas
+# 11i Maps
 
-Next.js 14 SaaS foundation for multi-location listings, NAP distribution, reviews, and local SEO content.
+Tenant-aware local SEO and multi-location operations platform operated by 22i Solutions LLP.
 
-## Start
+## Stack
 
-1. Copy `.env.example` to `.env.local` and provide PostgreSQL, OAuth, OpenAI, and encryption secrets.
-2. Run `npm install`, then `npx prisma generate && npx prisma db push`.
-3. Run `npm run dev`.
+- Next.js 16 App Router, React 19 and TypeScript
+- Tailwind CSS
+- Auth.js / NextAuth 5
+- Prisma 5 and PostgreSQL
+- Vercel Functions, Analytics, Speed Insights and Cron
+- Optional Razorpay and OpenAI adapters
 
-## Important integration points
+## Local setup
 
-- Google requires a Business Profile-enabled Google Cloud project and approved `business.manage` scope.
-- Microsoft/Bing OAuth identifies the connector; its listing write API/account mapping must be implemented in `lib/platform-sync.ts` for the specific Bing Places partner contract.
-- `MapPlatform` provides the canonical registry for the top directories (Google, Bing, Apple, Meta, Yelp, Yahoo, Nextdoor, TomTom, HERE, Waze, TripAdvisor, etc.). Directories without public write APIs are represented as queued/manual-feed syncs.
-- Account credentials are encrypted with AES-256-GCM after OAuth account linking. Use a distinct, high-entropy `TOKEN_ENCRYPTION_KEY` and rotate it through a managed-key migration.
-- The Vercel cron creates drafts. Change `status: "DRAFT"` to `"PUBLISHED"` only after adding editorial/brand review rules if automatic publishing is desired.
+1. Copy `.env.example` to `.env.local` and configure a non-production PostgreSQL database and Auth.js credentials.
+2. Install dependencies with `npm ci`.
+3. Generate the client with `npx prisma generate`.
+4. Review `docs/deployment.md` before applying migrations. Empty databases use the baseline plus tenant migration; an existing production database must resolve the baseline before applying the tenant migration.
+5. Start the application with `npm run dev`.
+
+## Verification
+
+```bash
+npm run lint
+npm run build -- --webpack
+```
+
+The webpack flag avoids a local Turbopack sandbox limitation that attempts to bind an internal port. Vercel production builds are not affected by that local restriction.
+
+## Product routes
+
+- Public website: `/`
+- Authenticated product: `/app`
+- Manual onboarding: `/app/onboarding`
+- Location directory: `/app/locations`
+- Optimisation tasks: `/app/tasks`
+- Integration health: `/app/integrations`
+- Internal administration: `/admin` (requires `PLATFORM_SUPER_ADMIN`)
+- Operational database/schema health: `/api/health` (no customer data)
+
+## Important limitations
+
+- Google Business Profile requires approved API access and a dedicated connection flow. Google sign-in alone does not enable profile management.
+- Bing Places publishing requires a supported approved interface or partner relationship.
+- Geo-grid rankings require a licensed data provider.
+- AI review and content output remains draft material until a configured publishing adapter succeeds.
+- Razorpay checkout is disabled unless `RAZORPAY_LIVE_ENABLED=true` and all server-side plan credentials are configured and tested.
+
+See the complete audit and roadmap in [`docs/architecture.md`](docs/architecture.md) and [`docs/implementation-plan.md`](docs/implementation-plan.md).
