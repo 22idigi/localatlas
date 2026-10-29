@@ -11,7 +11,7 @@ const responseHeaders = {
 
 export async function GET() {
   try {
-    const [health] = await prisma.$queryRaw<Array<{ databaseConnected: boolean; tenantReady: boolean; searchConsoleReady: boolean }>>`
+    const [health] = await prisma.$queryRaw<Array<{ databaseConnected: boolean; tenantReady: boolean; searchConsoleReady: boolean; providerReady: boolean }>>`
       SELECT
         TRUE AS "databaseConnected",
         (
@@ -24,15 +24,19 @@ export async function GET() {
           to_regclass('"IntegrationConnection"') IS NOT NULL
           AND to_regclass('"SearchConsoleProperty"') IS NOT NULL
           AND to_regclass('"IntegrationOAuthState"') IS NOT NULL
-        ) AS "searchConsoleReady"
+        ) AS "searchConsoleReady",
+        (
+          to_regclass('"ProviderAccount"') IS NOT NULL
+          AND to_regclass('"ProviderLocation"') IS NOT NULL
+        ) AS "providerReady"
     `;
 
-    const ready = Boolean(health?.databaseConnected && health?.tenantReady && health?.searchConsoleReady);
+    const ready = Boolean(health?.databaseConnected && health?.tenantReady && health?.searchConsoleReady && health?.providerReady);
     return NextResponse.json(
       {
         status: ready ? "ok" : "degraded",
         database: health?.databaseConnected ? "connected" : "unavailable",
-        schema: health?.searchConsoleReady ? "search-console-ready" : health?.tenantReady ? "tenant-foundation" : "incomplete",
+        schema: health?.providerReady ? "provider-ready" : health?.searchConsoleReady ? "search-console-ready" : health?.tenantReady ? "tenant-foundation" : "incomplete",
       },
       { status: ready ? 200 : 503, headers: responseHeaders },
     );

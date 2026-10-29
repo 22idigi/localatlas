@@ -1,4 +1,5 @@
 import { MapPlatform, PlatformType } from "@prisma/client";
+import { pushGoogleBusinessLocation } from "@/lib/google-business-profile";
 
 export type NapPayload = { name: string; addressLine1: string; addressLine2?: string | null; city: string; state: string; postalCode: string; country: string; phone: string; websiteUrl?: string | null; primaryCategory?: string | null; hours?: unknown };
 export type PlatformSyncResult = { remoteId: string; outcome: "UPDATED" | "QUEUED"; message?: string };
@@ -9,7 +10,7 @@ export async function pushLocationToPlatform(platform: Pick<MapPlatform, "id" | 
   void nap;
   switch (platform.type) {
     case PlatformType.GOOGLE:
-      throw new Error("Google Business Profile publishing is not configured yet");
+      return pushGoogleBusinessLocation(platform.externalLocationId, nap);
     case PlatformType.BING:
       throw new Error("Bing Places publishing requires an approved partner connection");
     default:

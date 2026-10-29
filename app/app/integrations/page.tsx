@@ -11,9 +11,13 @@ export default async function IntegrationsPage() {
     where: { organizationId_provider: { organizationId: tenant.organization.id, provider: "GOOGLE_SEARCH_CONSOLE" } },
     include: { _count: { select: { searchConsoleProperties: true } } },
   });
+  const gbp = await prisma.integrationConnection.findUnique({
+    where: { organizationId_provider: { organizationId: tenant.organization.id, provider: "GOOGLE_BUSINESS_PROFILE" } },
+    include: { _count: { select: { providerAccounts: true, providerLocations: true } } },
+  });
   const integrations = [
     { name: "Google Search Console", status: gsc ? `${gsc._count.searchConsoleProperties} properties discovered` : "Ready to connect", detail: gsc ? `Read-only search performance is connected${gsc.externalAccountEmail ? ` for ${gsc.externalAccountEmail}` : ""}.` : "Connect once to discover every Search Console property the chosen Google account can access, then select the property to report on.", ready: gsc?.status === "CONNECTED", href: gsc ? "/app/search-console" : "/api/integrations/google-search-console/connect", action: gsc ? "View performance" : "Connect Google" },
-    { name: "Google Business Profile", status: "Requires approval", detail: "The adapter and tenant model are prepared. Live account discovery and publishing require a Google Cloud project approved for Business Profile APIs.", ready: false },
+    { name: "Google Business Profile", status: gbp ? gbp.status === "CONNECTED" ? `${gbp._count.providerLocations} locations discovered` : gbp.status.toLowerCase().replaceAll("_", " ") : "Ready to connect", detail: gbp ? `Connected${gbp.externalAccountEmail ? ` as ${gbp.externalAccountEmail}` : ""}. Account discovery, selective import and confirmed NAP publishing are available when Google API access is approved.` : "Connect an owner or manager account once to discover its authorised business accounts and locations.", ready: gbp?.status === "CONNECTED", href: gbp ? "/app/listings" : "/api/integrations/google-business-profile/connect", action: gbp ? "Manage listings" : "Connect Google" },
     { name: "Bing Places", status: "Partner access required", detail: "Microsoft sign-in is not proof of Bing Places publishing access. A supported partner contract or approved interface is required.", ready: false },
     { name: "Razorpay", status: process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET ? "Server credentials detected" : "Not configured", detail: "Checkout remains unavailable until plan IDs, webhook validation and a test subscription are verified.", ready: Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) },
     { name: "Manual workspace", status: "Available", detail: "Tenant-isolated locations, profile audits, optimisation tasks and activity logs are available without an external provider.", ready: true },

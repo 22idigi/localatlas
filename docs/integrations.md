@@ -32,15 +32,19 @@ Enable `searchconsole.googleapis.com` in the same Google Cloud project. Connecti
 
 ## Google Business Profile
 
-Status: adapter placeholder; requires Google approval.
+Status: connector implemented; production discovery remains gated by Google project approval.
+
+The connector uses a dedicated `business.manage` consent with PKCE, encrypted access/refresh tokens and automatic refresh. It paginates every authorised Business Profile account and location, keeps the remote inventory separate from canonical 11i data, supports selective import, and publishes NAP changes only when Google confirms the PATCH. Imported listings can also sync reviews; AI replies remain drafts until a person approves and Google confirms the reply.
 
 Prerequisites:
 
 - Google Cloud project with the relevant Business Profile APIs enabled and approved.
-- OAuth client and approved redirect URI.
+- OAuth client with `https://11i.co/api/integrations/google-business-profile/callback` approved as a redirect URI.
 - `business.manage` consent requested only when the user connects a business account.
-- Encrypted refresh-token storage, refresh handling and revocation.
-- Test account with authorised business locations.
+- Set `GOOGLE_BUSINESS_PROFILE_REDIRECT_URI` in Production; the connector can reuse `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`.
+- Test with an account that is an owner or manager of authorised business locations. Client access should be delegated by the client or granted through the connector; never request a client's password.
+
+Google's Business Profile API access request must be approved for the Cloud project before the location and review endpoints will return data. OAuth consent alone is not API approval.
 
 ## Microsoft sign-in and Bing Places
 
