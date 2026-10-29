@@ -177,6 +177,8 @@ model Organization {
   integrationConnections  IntegrationConnection[]
   integrationOAuthStates  IntegrationOAuthState[]
   searchConsoleProperties SearchConsoleProperty[]
+  providerAccounts        ProviderAccount[]
+  providerLocations       ProviderLocation[]
   createdAt               DateTime                @default(now())
   updatedAt               DateTime                @updatedAt
 }
@@ -196,6 +198,8 @@ model IntegrationConnection {
   lastError               String?                 @db.Text
   organization            Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   searchConsoleProperties SearchConsoleProperty[]
+  providerAccounts        ProviderAccount[]
+  providerLocations       ProviderLocation[]
   createdAt               DateTime                @default(now())
   updatedAt               DateTime                @updatedAt
 
@@ -235,6 +239,61 @@ model SearchConsoleProperty {
 
   @@unique([connectionId, siteUrl])
   @@index([organizationId, selected])
+}
+
+model ProviderAccount {
+  id                String                @id @default(cuid())
+  organizationId    String
+  connectionId      String
+  provider          IntegrationProvider
+  externalAccountId String
+  displayName       String
+  accountType       String?
+  role              String?
+  verificationState String?
+  metadata          Json?
+  selected          Boolean               @default(true)
+  lastDiscoveredAt  DateTime              @default(now())
+  organization      Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  connection        IntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  locations         ProviderLocation[]
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  @@unique([connectionId, externalAccountId])
+  @@index([organizationId, provider])
+}
+
+model ProviderLocation {
+  id                 String                @id @default(cuid())
+  organizationId     String
+  connectionId       String
+  providerAccountId  String
+  provider           IntegrationProvider
+  externalLocationId String
+  title              String
+  storeCode          String?
+  primaryCategory    String?
+  phone              String?
+  websiteUrl         String?
+  address            Json?
+  regularHours       Json?
+  metadata           Json?
+  localLocationId    String?
+  syncState          SyncState             @default(PENDING)
+  lastReadAt         DateTime?
+  lastWrittenAt      DateTime?
+  lastError          String?               @db.Text
+  organization       Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  connection         IntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  providerAccount    ProviderAccount       @relation(fields: [providerAccountId], references: [id], onDelete: Cascade)
+  localLocation      Location?             @relation(fields: [localLocationId], references: [id], onDelete: SetNull)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  @@unique([connectionId, externalLocationId])
+  @@index([organizationId, provider, syncState])
+  @@index([localLocationId, provider])
 }
 
 model Membership {
@@ -309,30 +368,31 @@ model VerificationToken {
 }
 
 model Location {
-  id              String             @id @default(cuid())
-  userId          String
-  organizationId  String
-  name            String
-  addressLine1    String
-  addressLine2    String?
-  city            String
-  state           String
-  postalCode      String
-  country         String             @default("US")
-  phone           String
-  websiteUrl      String?
-  primaryCategory String?
-  hours           Json?
-  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  platforms       MapPlatform[]
-  reviews         Review[]
-  media           Media[]
-  posts           Post[]
-  auditRuns       AuditRun[]
-  tasks           OptimizationTask[]
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id                String             @id @default(cuid())
+  userId            String
+  organizationId    String
+  name              String
+  addressLine1      String
+  addressLine2      String?
+  city              String
+  state             String
+  postalCode        String
+  country           String             @default("US")
+  phone             String
+  websiteUrl        String?
+  primaryCategory   String?
+  hours             Json?
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  platforms         MapPlatform[]
+  reviews           Review[]
+  media             Media[]
+  posts             Post[]
+  auditRuns         AuditRun[]
+  tasks             OptimizationTask[]
+  providerLocations ProviderLocation[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   @@index([userId])
   @@index([organizationId, updatedAt])

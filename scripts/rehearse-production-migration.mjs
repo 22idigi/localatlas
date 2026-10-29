@@ -4,11 +4,13 @@ import { Client } from "pg";
 const BASELINE_MIGRATION = "20261026000100_initial_baseline";
 const TENANT_MIGRATION = "20261027000100_tenant_foundation";
 const SEARCH_CONSOLE_MIGRATION = "20261029000100_search_console_connector";
+const PROVIDER_CONNECTOR_MIGRATION = "20261030000100_google_business_profile_connector";
 const BASELINE_MARKER = "/tmp/11i-production-baseline-resolution-required";
 
 const baselineTables = ["User", "Account", "Session", "VerificationToken", "Subscription", "Location", "MapPlatform", "Review", "Post", "Media"];
 const tenantTables = ["Organization", "Membership", "AuditRun", "AuditFinding", "OptimizationTask", "ActivityLog"];
 const searchConsoleTables = ["IntegrationConnection", "IntegrationOAuthState", "SearchConsoleProperty"];
+const providerConnectorTables = ["ProviderAccount", "ProviderLocation"];
 const preservedTables = ["User", "Location", "Review", "Post", "Media"];
 
 function quoteIdentifier(identifier) {
@@ -82,6 +84,7 @@ async function main() {
     const migrationNames = await readMigrationNames(client);
     const tenantState = await assertMigrationState(client, migrationNames, TENANT_MIGRATION, tenantTables);
     const gscState = await assertMigrationState(client, migrationNames, SEARCH_CONSOLE_MIGRATION, searchConsoleTables);
+    const providerState = await assertMigrationState(client, migrationNames, PROVIDER_CONNECTOR_MIGRATION, providerConnectorTables);
     const beforeCounts = await countRows(client, preservedTables);
 
     await client.query("BEGIN");
@@ -95,8 +98,12 @@ async function main() {
       const searchConsoleSql = await readFile("prisma/migrations/20261029000100_search_console_connector/migration.sql", "utf8");
       await client.query(searchConsoleSql);
     }
+    if (!providerState.recorded) {
+      const providerSql = await readFile("prisma/migrations/20261030000100_google_business_profile_connector/migration.sql", "utf8");
+      await client.query(providerSql);
+    }
 
-    await requireTables(client, [...tenantTables, ...searchConsoleTables], "Rehearsed schema");
+    await requireTables(client, [...tenantTables, ...searchConsoleTables, ...providerConnectorTables], "Rehearsed schema");
     assertCountsUnchanged(beforeCounts, await countRows(client, preservedTables));
 
     const integrityResult = await client.query(
@@ -114,7 +121,7 @@ async function main() {
     }
 
     console.log("Production migration rehearsal rolled back successfully.");
-    console.log("Verified baseline, tenant isolation, GSC schema, and preserved row counts.");
+    console.log("Verified baseline, tenant isolation, GSC/provider schemas, and preserved row counts.");
   } finally {
     if (transactionOpen) await client.query("ROLLBACK").catch(() => undefined);
     await client.end();
