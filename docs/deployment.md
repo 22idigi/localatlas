@@ -32,7 +32,9 @@ npx prisma migrate deploy
 
 Do not resolve the tenant migration manually. Rehearse the exact production sequence against a restored staging copy before release.
 
-Preview builds can apply migrations only when both `VERCEL_ENV=preview` and `RUN_PREVIEW_MIGRATIONS=true`. Keep that branch-scoped flag off after the reviewed migration succeeds. Production builds never run this gated migration script.
+Preview builds can apply migrations only when both `VERCEL_ENV=preview` and `RUN_PREVIEW_MIGRATIONS=true`. Keep that branch-scoped flag off after the reviewed migration succeeds.
+
+The first production migration-managed release uses the separate, one-time `RUN_PRODUCTION_MIGRATIONS=true` gate. The build first executes the exact pending migration SQL inside a transaction against Production, verifies the baseline, tenant isolation, GSC tables and preserved row counts, and rolls the transaction back. Only a successful rehearsal records an existing baseline when necessary and runs `prisma migrate deploy`. Set this gate back to `false` immediately after the successful release. Never keep either migration gate enabled during ordinary deployments.
 
 ## Required environment variables
 
