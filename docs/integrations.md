@@ -17,6 +17,19 @@ Use the stable Preview alias for OAuth testing; per-deployment URLs change on ev
 
 The sign-in provider requests only `openid email profile`. Google Business Profile permission must use a separate connector and callback.
 
+## Google Search Console
+
+Status: implemented with a dedicated read-only consent.
+
+The connector requests only `https://www.googleapis.com/auth/webmasters.readonly`. It discovers every property returned by `sites.list`, stores encrypted access and refresh tokens at organisation level, and provides a property selector plus 28-day final search-performance reporting.
+
+The Google OAuth web client must also allow these callbacks:
+
+- Production: `https://11i.co/api/integrations/google-search-console/callback`
+- Stable Preview: `https://localatlas-git-codex-tenant-foundation-22i.vercel.app/api/integrations/google-search-console/callback`
+
+Enable `searchconsole.googleapis.com` in the same Google Cloud project. Connecting Search Console never grants Google Business Profile publishing access.
+
 ## Google Business Profile
 
 Status: adapter placeholder; requires Google approval.
