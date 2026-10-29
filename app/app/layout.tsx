@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { BarChart3, ClipboardCheck, LogOut, MapPinned, PlugZap, Settings } from "lucide-react";
+import { BarChart3, ClipboardCheck, LogOut, MapPinned, PlugZap, SearchCheck, Settings } from "lucide-react";
 import { getTenantContext } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Workspace", robots: { index: false, follow: false } };
 const navigation = [
   [BarChart3, "Overview", "/app"],
   [MapPinned, "Locations", "/app/locations"],
+  [SearchCheck, "Search Console", "/app/search-console"],
   [ClipboardCheck, "Tasks", "/app/tasks"],
   [PlugZap, "Integrations", "/app/integrations"],
 ] as const;

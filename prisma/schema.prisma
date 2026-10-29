@@ -127,38 +127,114 @@ enum TaskStatus {
   DISMISSED
 }
 
+enum IntegrationProvider {
+  GOOGLE_SEARCH_CONSOLE
+  GOOGLE_BUSINESS_PROFILE
+  BING_PLACES
+  APPLE_BUSINESS_CONNECT
+  META
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  ACTION_REQUIRED
+  ERROR
+  DISCONNECTED
+  PENDING_APPROVAL
+}
+
 model User {
-  id            String         @id @default(cuid())
-  name          String?
-  email         String?        @unique
-  emailVerified DateTime?
-  image         String?
-  brandVoice    String         @default("warm, helpful, and concise")
-  supportEmail  String?
-  accounts      Account[]
-  sessions      Session[]
-  locations     Location[]
-  memberships   Membership[]
-  activityLogs  ActivityLog[]
-  subscriptions Subscription[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                     String                  @id @default(cuid())
+  name                   String?
+  email                  String?                 @unique
+  emailVerified          DateTime?
+  image                  String?
+  brandVoice             String                  @default("warm, helpful, and concise")
+  supportEmail           String?
+  accounts               Account[]
+  sessions               Session[]
+  locations              Location[]
+  memberships            Membership[]
+  activityLogs           ActivityLog[]
+  subscriptions          Subscription[]
+  integrationOAuthStates IntegrationOAuthState[]
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
 }
 
 model Organization {
-  id              String             @id @default(cuid())
-  name            String
-  slug            String             @unique
-  type            OrganizationType   @default(BUSINESS)
-  businessType    String?
-  operatingRegion String?
-  memberships     Membership[]
-  locations       Location[]
-  auditRuns       AuditRun[]
-  tasks           OptimizationTask[]
-  activityLogs    ActivityLog[]
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id                      String                  @id @default(cuid())
+  name                    String
+  slug                    String                  @unique
+  type                    OrganizationType        @default(BUSINESS)
+  businessType            String?
+  operatingRegion         String?
+  memberships             Membership[]
+  locations               Location[]
+  auditRuns               AuditRun[]
+  tasks                   OptimizationTask[]
+  activityLogs            ActivityLog[]
+  integrationConnections  IntegrationConnection[]
+  integrationOAuthStates  IntegrationOAuthState[]
+  searchConsoleProperties SearchConsoleProperty[]
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+}
+
+model IntegrationConnection {
+  id                      String                  @id @default(cuid())
+  organizationId          String
+  provider                IntegrationProvider
+  status                  IntegrationStatus       @default(CONNECTED)
+  externalAccountEmail    String?
+  encryptedAccessToken    String?                 @db.Text
+  encryptedRefreshToken   String?                 @db.Text
+  accessTokenExpiresAt    DateTime?
+  scopes                  String[]
+  metadata                Json?
+  lastSyncedAt            DateTime?
+  lastError               String?                 @db.Text
+  organization            Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  searchConsoleProperties SearchConsoleProperty[]
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+
+  @@unique([organizationId, provider])
+  @@index([organizationId, status])
+}
+
+model IntegrationOAuthState {
+  id                    String              @id @default(cuid())
+  state                 String              @unique
+  organizationId        String
+  userId                String
+  provider              IntegrationProvider
+  redirectUri           String
+  encryptedCodeVerifier String              @db.Text
+  expiresAt             DateTime
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt             DateTime            @default(now())
+
+  @@index([organizationId, provider, expiresAt])
+  @@index([userId, expiresAt])
+}
+
+model SearchConsoleProperty {
+  id              String                @id @default(cuid())
+  organizationId  String
+  connectionId    String
+  siteUrl         String
+  permissionLevel String
+  selected        Boolean               @default(false)
+  lastFetchedAt   DateTime?
+  organization    Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  connection      IntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@unique([connectionId, siteUrl])
+  @@index([organizationId, selected])
 }
 
 model Membership {
