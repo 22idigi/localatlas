@@ -8,6 +8,13 @@ Status: implemented, awaiting credential/live-flow verification.
 
 Required environment variables: `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_SECRET`.
 
+The Google OAuth web client must allow these callback URLs:
+
+- Production: `https://11i.co/api/auth/callback/google`
+- Stable Preview: `https://localatlas-git-codex-tenant-foundation-22i.vercel.app/api/auth/callback/google`
+
+Use the stable Preview alias for OAuth testing; per-deployment URLs change on every build.
+
 The sign-in provider requests only `openid email profile`. Google Business Profile permission must use a separate connector and callback.
 
 ## Google Business Profile
