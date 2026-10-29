@@ -11,7 +11,7 @@ const responseHeaders = {
 
 export async function GET() {
   try {
-    const [health] = await prisma.$queryRaw<Array<{ databaseConnected: boolean; tenantReady: boolean }>>`
+    const [health] = await prisma.$queryRaw<Array<{ databaseConnected: boolean; tenantReady: boolean; searchConsoleReady: boolean }>>`
       SELECT
         TRUE AS "databaseConnected",
         (
@@ -19,15 +19,20 @@ export async function GET() {
           AND to_regclass('"Membership"') IS NOT NULL
           AND to_regclass('"AuditRun"') IS NOT NULL
           AND to_regclass('"OptimizationTask"') IS NOT NULL
-        ) AS "tenantReady"
+        ) AS "tenantReady",
+        (
+          to_regclass('"IntegrationConnection"') IS NOT NULL
+          AND to_regclass('"SearchConsoleProperty"') IS NOT NULL
+          AND to_regclass('"IntegrationOAuthState"') IS NOT NULL
+        ) AS "searchConsoleReady"
     `;
 
-    const ready = Boolean(health?.databaseConnected && health?.tenantReady);
+    const ready = Boolean(health?.databaseConnected && health?.tenantReady && health?.searchConsoleReady);
     return NextResponse.json(
       {
         status: ready ? "ok" : "degraded",
         database: health?.databaseConnected ? "connected" : "unavailable",
-        schema: health?.tenantReady ? "tenant-foundation" : "incomplete",
+        schema: health?.searchConsoleReady ? "search-console-ready" : health?.tenantReady ? "tenant-foundation" : "incomplete",
       },
       { status: ready ? 200 : 503, headers: responseHeaders },
     );
